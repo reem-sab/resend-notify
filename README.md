@@ -59,6 +59,8 @@ TO_EMAIL=you@yourdomain.com
 ```
 
 > **Note:** `onboarding@resend.dev` works without a verified domain and is ideal for testing. To send from your own domain, [verify it in the Resend dashboard](https://resend.com/domains) first.
+>
+> **Security:** Never commit your `.env` file. It is already in `.gitignore`, but double-check before pushing.
 
 ### 4. Send your first notification
 
@@ -222,6 +224,7 @@ Resend will then send real-time POST requests to your endpoint for every email e
 
 | File | Description |
 |---|---|
+| `demo.py` | Runs the full demo sequence — send, schedule, and webhook instructions |
 | `send_notification.py` | Sends a deploy notification email with an attached log file |
 | `schedule_digest.py` | Schedules a follow-up email 24 hours later |
 | `webhook_handler.py` | Flask server that receives and logs Resend webhook events |
@@ -263,3 +266,9 @@ Resend's `scheduled_at` parameter accepts an ISO 8601 timestamp, keeping impleme
 - [Resend API Reference](https://resend.com/docs/api-reference/introduction)
 - [Webhook Events Reference](https://resend.com/docs/webhooks/introduction)
 - [Resend Dashboard](https://resend.com)
+
+---
+
+## License
+
+MIT

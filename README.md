@@ -219,6 +219,7 @@ Resend will then send real-time POST requests to your endpoint for every email e
 | `FROM_EMAIL` | Yes | Verified sender address |
 | `TO_EMAIL` | Yes | Recipient address |
 | `WEBHOOK_SECRET` | No | Secret for verifying webhook signatures |
+| `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key (for AI features) |
 
 ### Project Files
 
@@ -257,6 +258,54 @@ Scheduling decouples *when you trigger an email* from *when it should be sent*. 
 - **Time zone awareness** — queue emails to arrive during business hours regardless of when the event fired
 
 Resend's `scheduled_at` parameter accepts an ISO 8601 timestamp, keeping implementation simple without requiring a separate job queue.
+
+---
+
+## AI Features
+
+resend-notify uses the [Claude API](https://anthropic.com) to add an intelligence layer on top of Resend's email infrastructure.
+
+### Bounce explainer
+
+When `webhook_handler.py` receives an `email.bounced` event, it automatically calls Claude to diagnose the bounce and recommend a fix — in plain English.
+
+```
+── AI Bounce Analysis ──
+  The address bad@fakeemail.com does not exist. The domain is not
+  registered and cannot receive email. Remove this address from your
+  send list and verify the correct recipient before retrying.
+────────────────────────
+```
+
+### Smart subject line
+
+`send_notification.py` generates a context-aware subject line before sending, based on the deployment version, environment, status, and duration.
+
+```
+Generating subject line...
+Subject: Production Deployment v2.1.4 Successful - 43s
+```
+
+### AI digest summarizer
+
+`schedule_digest.py` reads the deploy log and generates a plain-English summary that is included in the follow-up email body — so developers get the key information without opening an attachment.
+
+```
+Summarizing deploy log...
+Summary: Production v2.1.4 deployed successfully. All tests passed,
+the Docker image built and pushed without issues, and health checks
+confirmed the new version is running. No action needed.
+```
+
+### Setup
+
+Add your Anthropic API key to `.env`:
+
+```
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+```
+
+All three features use `claude-haiku-4-5-20251001` for fast, lightweight inference.
 
 ---
 

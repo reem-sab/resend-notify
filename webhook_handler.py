@@ -1,40 +1,49 @@
 import os
+import anthropic
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
+client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+def explain_bounce(email_data):
+    prompt = f"""An email bounce occurred with the following details:
+- To: {email_data.get('to')}
+- Subject: {email_data.get('subject')}
+- Email ID: {email_data.get('email_id')}
+
+In 2-3 sentences, explain what likely caused this bounce and what the developer should do next. Be specific and practical."""
+
+    message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=150,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return message.content[0].text
 
 @app.route("/webhook", methods=["POST"])
-def handle_webhook():
-    payload = request.get_json(force=True, silent=True)
-    
-    if not payload:
-        return jsonify({"status": "error", "message": "invalid payload"}), 400
+def webhook():
+    data = request.get_json()
+    event_type = data.get("type")
+    email_data = data.get("data", {})
 
-    event_type = payload.get("type", "unknown")
-    data = payload.get("data", {})
-    email_id = data.get("email_id", "unknown")
-    to = data.get("to", [])
-    subject = data.get("subject", "unknown")
-
-    print(f"\n── Webhook Event Received ──")
+    print("\n── Webhook Event Received ──")
     print(f"  Event:    {event_type}")
-    print(f"  Email ID: {email_id}")
-    print(f"  To:       {to}")
-    print(f"  Subject:  {subject}")
-    print(f"───────────────────────────\n")
+    print(f"  Email ID: {email_data.get('email_id')}")
+    print(f"  To:       {email_data.get('to')}")
+    print(f"  Subject:  {email_data.get('subject')}")
 
-    return jsonify({"status": "received"}), 200
+    if event_type == "email.bounced":
+        print("\n── AI Bounce Analysis ──")
+        explanation = explain_bounce(email_data)
+        print(f"  {explanation}")
+        print("────────────────────────")
+    else:
+        print("───────────────────────────")
 
-@app.after_request
-def add_headers(response):
-    response.headers["ngrok-skip-browser-warning"] = "true"
-    return response
+    return jsonify({"status": "ok"}), 200
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    print(f"✓ Webhook handler running on port {port}")
-    print(f"  Webhook URL: https://avalyn-limitative-savingly.ngrok-free.dev/webhook")
-    app.run(port=port, debug=True)
+    app.run(port=5000, debug=True)

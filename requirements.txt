@@ -1,3 +1,4 @@
 resend
 flask
 python-dotenv
+anthropic
